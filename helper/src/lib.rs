@@ -1,6 +1,6 @@
 pub fn easy_input(input_name: &str) -> String {
     //input file should be the same name as crate for aoc
-    //so crate "day1" should have input "day1
+    //so crate "day1" should have input file name be "day1"
     std::fs::read_to_string(format!("/home/mnohem/Code/aoc2021/input/{}", input_name))
         .expect("Could not read input file").trim().to_owned()
 }
