@@ -3,4 +3,5 @@
 members = [
 	"helper",
 	"day1",
+	"day2",
 ]
