@@ -8,9 +8,9 @@ fn main() {
         easy_input(day_num)
     };
 
-    //let (depth, x_pos) = day2_part1(&input);
+    let (depth, x_pos) = day2_part1(&input);
+    println!("{}", depth * x_pos);
     let (depth, x_pos) = day2_part2(&input);
-
     println!("{}", depth * x_pos);
 }
 
