@@ -49,7 +49,7 @@ fn day3_part2(input: &str) {
     println!("{}", co2 * o2);
 }
 
-fn common_bits<'a, SI, T>(lines: SI) -> [i32; 12]
+fn common_bits<SI, T>(lines: SI) -> [i32; 12]
 where
     SI: Iterator<Item = T>,
     T: std::string::ToString,
