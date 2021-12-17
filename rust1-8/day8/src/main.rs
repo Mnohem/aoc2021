@@ -13,6 +13,7 @@ fn main() {
     let entries = input.lines().map(|x| x.split(" | "));
 
     let unique_segments = entries
+        .clone()
         .flat_map(|x| x.skip(1).next().unwrap().split(' '))
         .filter(|x| match x.len() {
             2 | 3 | 4 | 7 => true,
@@ -20,23 +21,19 @@ fn main() {
         })
         .count();
     println!("{}", unique_segments);
+    let total: u64 = entries
+        .map(|mut x| decode_entry(x.next().unwrap(), x.next().unwrap()))
+        .sum();
+    println!("{}", total);
 }
 
-const TOP: u8 = 0b01000000;
-const UPPER_LEFT: u8 = 0b00100000;
-const UPPER_RIGHT: u8 = 0b00010000;
-const MIDDLE: u8 = 0b00001000;
-const LOWER_LEFT: u8 = 0b00000100;
-const LOWER_RIGHT: u8 = 0b00000010;
-const BOTTOM: u8 = 0b00000001;
-
-fn decode_entry(code_str: &str, num_str: &str) -> Option<u64> {
+fn decode_entry(code_str: &str, num_str: &str) -> u64 {
     let digit_codes = code_str.split(' ');
 
-    let one_code = &digit_codes.find(|x| x.len() == 2)?;
-    let seven_code = &digit_codes.find(|x| x.len() == 3)?;
-    let four_code = &digit_codes.find(|x| x.len() == 4)?;
-    let eight_code = &digit_codes.find(|x| x.len() == 7)?;
+    let one_code = &digit_codes.clone().find(|x| x.len() == 2).unwrap();
+    let seven_code = &digit_codes.clone().find(|x| x.len() == 3).unwrap();
+    let four_code = &digit_codes.clone().find(|x| x.len() == 4).unwrap();
+    let eight_code = &digit_codes.clone().find(|x| x.len() == 7).unwrap();
 
     let digit_codes = digit_codes
         .filter(|x| x != one_code && x != seven_code && x != four_code && x != eight_code);
@@ -45,24 +42,29 @@ fn decode_entry(code_str: &str, num_str: &str) -> Option<u64> {
 
     let top_seg_code = seven_code
         .chars()
-        .find(|x| !one_code.contains(&x.to_string()))?;
+        .find(|x| !one_code.contains(&x.to_string()))
+        .unwrap();
 
     let mut partial_nine = four_code.to_string();
     partial_nine.push(top_seg_code);
 
-    let nine_code = digit_codes.find(|x| contains_chars(x, &partial_nine))?;
+    let nine_code = digit_codes
+        .clone()
+        .find(|x| contains_chars(x, &partial_nine))
+        .unwrap();
     let digit_codes = digit_codes.filter(|x| x != &nine_code);
 
-    let bottom_seg_code = one_diff_char(nine_code, &partial_nine)?;
-    let ll_seg_code = one_diff_char(&eight_code, nine_code)?;
+    let ll_seg_code = one_diff_char(&eight_code, nine_code).unwrap();
 
-    let three_and_five = digit_codes.filter(|x| !x.contains(&ll_seg_code.to_string()));
-    let zero_and_six = digit_codes.filter(|x| x.len() == 6);
+    let mut three_and_five = digit_codes
+        .clone()
+        .filter(|x| !x.contains(&ll_seg_code.to_string()));
+    let mut zero_and_six = digit_codes.clone().filter(|x| x.len() == 6);
 
     let mut five_code = "";
     let mut six_code = "";
-    for code1 in three_and_five {
-        for code2 in zero_and_six {
+    for code1 in three_and_five.clone() {
+        for code2 in zero_and_six.clone() {
             let mut maybe_six = (ll_seg_code.to_string() + code1.clone())
                 .chars()
                 .collect::<Vec<_>>();
@@ -75,37 +77,32 @@ fn decode_entry(code_str: &str, num_str: &str) -> Option<u64> {
             }
         }
     }
-    let zero_code = zero_and_six.find(|x| x != six_code)?;
-    let three_code = three_and_five.find(|x| x != five_code)?;
-    let two_code = digit
+    let zero_code = zero_and_six.find(|&x| x != six_code).unwrap();
+    let three_code = three_and_five.find(|&x| x != five_code).unwrap();
+    let two_code = digit_codes
+        .clone()
+        .find(|&x| x != five_code && x != six_code && x != zero_code && x != three_code)
+        .unwrap();
 
-    decode_map.insert(zero_code, 0);
-    decode_map.insert(*one_code, 1);
-    decode_map.insert(two_code, 2);
-    decode_map.insert(three_code, 3);
-    decode_map.insert(four_code, 4);
-    decode_map.insert(five_code, 5);
-    decode_map.insert(six_code, 6);
-    decode_map.insert(seven_code, 7);
-    decode_map.insert(eight_code, 8);
-    decode_map.insert(nine_code, 9);
+    decode_map.insert(sort_str(zero_code), 0);
+    decode_map.insert(sort_str(one_code), 1);
+    decode_map.insert(sort_str(two_code), 2);
+    decode_map.insert(sort_str(three_code), 3);
+    decode_map.insert(sort_str(four_code), 4);
+    decode_map.insert(sort_str(five_code), 5);
+    decode_map.insert(sort_str(six_code), 6);
+    decode_map.insert(sort_str(seven_code), 7);
+    decode_map.insert(sort_str(eight_code), 8);
+    decode_map.insert(sort_str(nine_code), 9);
 
-    let encoded_num = num_str.split(' ');
-}
-
-fn bin_segment_to_num(bin_segment: u8) -> u8 {
-    match bin_segment {
-        TOP | UPPER_LEFT | UPPER_RIGHT | MIDDLE | LOWER_RIGHT | BOTTOM => 9,
-        TOP | UPPER_LEFT | UPPER_RIGHT | MIDDLE | LOWER_LEFT | LOWER_RIGHT | BOTTOM => 8,
-        TOP | UPPER_RIGHT | LOWER_RIGHT => 7,
-        TOP | UPPER_LEFT | MIDDLE | LOWER_LEFT | LOWER_RIGHT | BOTTOM => 6,
-        TOP | UPPER_LEFT | MIDDLE | LOWER_RIGHT | BOTTOM => 5,
-        UPPER_LEFT | UPPER_RIGHT | MIDDLE | LOWER_RIGHT => 4,
-        TOP | UPPER_RIGHT | MIDDLE | LOWER_RIGHT | BOTTOM => 3,
-        TOP | UPPER_RIGHT | MIDDLE | LOWER_LEFT | BOTTOM => 2,
-        UPPER_RIGHT | LOWER_RIGHT => 1,
-        TOP | UPPER_LEFT | UPPER_RIGHT | LOWER_LEFT | LOWER_RIGHT | BOTTOM => 0,
-    }
+    num_str
+        .split(' ')
+        .enumerate()
+        .map(|(i, x)| {
+            let k = sort_str(x);
+            decode_map[&k] * 10u32.pow(3 - i as u32)
+        })
+        .sum::<u32>() as u64
 }
 
 fn contains_chars(this: &str, chars: &str) -> bool {
@@ -125,4 +122,10 @@ fn one_diff_char(this: &str, other: &str) -> Option<char> {
         }
     }
     None
+}
+
+fn sort_str(this: &str) -> String {
+    let mut vec = this.chars().collect::<Vec<_>>();
+    vec.sort();
+    vec.into_iter().collect::<String>()
 }
